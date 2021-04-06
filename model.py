@@ -1,56 +1,19 @@
-import torch.nn as nn
-import torchvision
-import torch
-
-#Define the Convolutional Autoencoder
-class ConvAutoencoder(nn.Module):
-    def __init__(self):
-        super(ConvAutoencoder, self).__init__()
-       
-        #Encoder
-        self.conv1 = nn.Conv2d(3, 16, 3, padding=1)  
-        self.conv2 = nn.Conv2d(16, 4, 3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
-       
-        #Decoder
-        self.t_conv1 = nn.ConvTranspose2d(4, 16, 2, stride=2)
-        self.t_conv2 = nn.ConvTranspose2d(16, 3, 2, stride=2)
+""" DeepLabv3 Model download and change the head for your prediction"""
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision import models
 
 
-    def forward(self, x):
-        x = torch.relu(self.conv1(x))
-        x = self.pool(x)
-        x = torch.relu(self.conv2(x))
-        x = self.pool(x)
-        x = torch.relu(self.t_conv1(x))
-        x = torch.sigmoid(self.t_conv2(x))
-              
-        return x
-
-        
-class AE(nn.Module):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.encoder_hidden_layer = nn.Linear(
-            in_features=kwargs["input_shape"], out_features=1024
-        )
-        self.encoder_output_layer = nn.Linear(
-            in_features=1024, out_features=512
-        )
-        self.decoder_hidden_layer = nn.Linear(
-            in_features=512, out_features=1024
-        )
-        self.decoder_output_layer = nn.Linear(
-            in_features=1024, out_features=kwargs["input_shape"]
-        )
-
-    def forward(self, features):
-        activation = self.encoder_hidden_layer(features)
-        activation = torch.relu(activation)
-        code = self.encoder_output_layer(activation)
-        code = torch.relu(code)
-        activation = self.decoder_hidden_layer(code)
-        activation = torch.relu(activation)
-        activation = self.decoder_output_layer(activation)
-        reconstructed = torch.relu(activation)
-        return reconstructed
+def createDeepLabv3(outputchannels=1):
+    """DeepLabv3 class with custom head
+    Args:
+        outputchannels (int, optional): The number of output channels
+        in your dataset masks. Defaults to 1.
+    Returns:
+        model: Returns the DeepLabv3 model with the ResNet101 backbone.
+    """
+    model = models.segmentation.deeplabv3_resnet50(pretrained=True,
+                                                    progress=True)
+    model.classifier = DeepLabHead(2048, outputchannels)
+    # Set the model in training mode
+    model.train()
+    return model
