@@ -7,7 +7,7 @@ import torch.nn as nn
 import torchvision
 import glob
 import random
-from model import AE
+from model import AE,ConvAutoencoder
 import pickle
 from torch.utils.tensorboard import SummaryWriter
 import os
@@ -29,15 +29,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # create a model from `AE` autoencoder class
 # load it to the specified device, either gpu or cpu
-model = AE(input_shape=2048).to(device)
+model = ConvAutoencoder().to(device)
 
 # create an optimizer object
 # Adam optimizer with learning rate 1e-3
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
+exp_name = "iter1_l1loss+512dim"
+save_path = "./logs/"+exp_name
 # mean-squared error loss
-criterion = nn.MSELoss()
-writer = SummaryWriter("./logs")
+criterion = nn.L1Loss()
+writer = SummaryWriter(save_path)
 
 # path = "/home/nmp/Desktop/Tez/masterthesis/data/nuh"
 # datas = glob.glob(path+"/**/*.csv")
@@ -98,7 +99,7 @@ for epoch in range(epochs):
     loss = loss / len(train_loader)
     writer.add_scalar("Loss/train", loss,epoch)
     if epoch%5 == 0:
-        torch.save(model.state_dict(),os.path.join("./logs", f"epoch{epoch}.pth"))
+        torch.save(model.state_dict(),os.path.join(save_path, f"epoch{epoch}.pth"))
     if epoch %10 == 0:
         loss_test = 0
         for batch_features in test_loader:
