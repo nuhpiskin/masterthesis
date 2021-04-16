@@ -56,8 +56,13 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
                             batchsummary[f'{phase}_{name}'].append(
                                 metric(y_true > 0, y_pred > 0.1))
                         else:
-                            batchsummary[f'{phase}_{name}'].append(
-                                metric(y_true.astype('uint8'), y_pred))
+                            try:
+                                y_true_tmp = y_true.copy()
+                                y_true_tmp[y_true_tmp>0] = 1
+                                batchsummary[f'{phase}_{name}'].append(
+                                    metric(y_true_tmp.astype('uint8'), y_pred))
+                            except:
+                               batchsummary[f'{phase}_{name}'].append(-1) 
 
                     # backward + optimize only if in training phase
                     if phase == 'Train':

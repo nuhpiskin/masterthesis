@@ -12,10 +12,12 @@ from train import train_model
 
 @click.command()
 @click.option("--data-directory",
-              required=True,
+              required=False,
+              default="/home/nmp/Desktop/Tez/masterthesis/data/Crack_Segmentation_Dataset-20210406T161122Z-001/Crack_Segmentation_Dataset",
               help="Specify the data directory.")
 @click.option("--exp_directory",
-              required=True,
+              required=False,
+              default="logs",
               help="Specify the experiment directory.")
 @click.option(
     "--epochs",
