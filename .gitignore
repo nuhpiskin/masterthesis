@@ -131,3 +131,7 @@ data
 logs
 data.pkl
 *.pth
+*.jpg
+*.png
+*.JPG
+.vscode
