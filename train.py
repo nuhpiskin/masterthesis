@@ -1,93 +1,145 @@
- 
-import copy
-import csv
+from dataloader import CrackConcrete
 import os
-import time
-
-import numpy as np
 import torch
-from tqdm import tqdm
+import torch.optim as optim
+import torch.backends.cudnn as cudnn
+from torch.utils.data import Dataset, DataLoader
+import argparse
+import torch.utils.data as data
+import torch.nn as nn
+import time
+import datetime
+import math
+import shutil
+from tqdm import trange
+from torchvision.ops import nms
+import tqdm
+from models.crack_models import CrackClassificationModels
+from torch.utils.tensorboard import SummaryWriter
+def train(args):
+    if not os.path.exists(args.save_folder):
+        os.mkdir(args.save_folder)
 
-def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
-                num_epochs):
-    since = time.time()
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_loss = 1e10
-    # Use gpu if available
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    # Initialize the log file for training and testing loss and metrics
-    fieldnames = ['epoch', 'Train_loss', 'Test_loss'] + \
-        [f'Train_{m}' for m in metrics.keys()] + \
-        [f'Test_{m}' for m in metrics.keys()]
-    with open(os.path.join(bpath, 'log.csv'), 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+    writer = SummaryWriter(args.save_folder+args.exp_name)
+    num_classes = 2
+    num_workers = args.num_workers
+    training_dataset = args.training_dataset
+    save_folder = args.save_folder+args.exp_name+"/"
 
-    for epoch in range(1, num_epochs + 1):
-        print('Epoch {}/{}'.format(epoch, num_epochs))
-        print('-' * 10)
-        # Each epoch has a training and validation phase
-        # Initialize batch summary
-        batchsummary = {a: [0] for a in fieldnames}
+    train_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification")
+    test_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification_Val")
 
-        for phase in ['Train', 'Test']:
-            if phase == 'Train':
-                model.train()  # Set model to training mode
+    train_loader = DataLoader(dataset= train_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
+    test_loader = DataLoader(dataset= test_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
+    device = "cuda"
+    net = CrackClassificationModels(model_name = args.network,num_classes = num_classes)
+    if args.resume_net is not None:
+        print('Loading resume network...')
+        state_dict = torch.load(args.resume_net)
+        # create new OrderedDict that does not contain `module.`
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            head = k[:7]
+            if head == 'module.':
+                name = k[7:] # remove `module.`
             else:
-                model.eval()  # Set model to evaluate mode
+                name = k
+            new_state_dict[name] = v
+        net.load_state_dict(new_state_dict)
+    net = net.cuda()
+    net.train()
+    cudnn.benchmark = True
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
-            # Iterate over data.
-            for sample in tqdm(iter(dataloaders[phase])):
-                inputs = sample['image'].to(device)
-                masks = sample['mask'].to(device)
-                # zero the parameter gradients
-                optimizer.zero_grad()
+    def multi_acc(y_pred, y_test):
+        y_pred_softmax = torch.softmax(y_pred, dim=1)
+        _, y_pred_tags = torch.max(y_pred_softmax, dim = 1)    
+        
+        correct_pred = (y_pred_tags == y_test).float()
+        acc = correct_pred.sum() / len(correct_pred)
+        
+        acc = acc * 100
+        
+        return acc
 
-                # track history if only in train
-                with torch.set_grad_enabled(phase == 'Train'):
-                    outputs = model(inputs)
-                    loss = criterion(outputs['out'], masks)
-                    y_pred = outputs['out'].data.cpu().numpy().ravel()
-                    y_true = masks.data.cpu().numpy().ravel()
-                    for name, metric in metrics.items():
-                        if name == 'f1_score':
-                            # Use a classification threshold of 0.1
-                            batchsummary[f'{phase}_{name}'].append(
-                                metric(y_true > 0, y_pred > 0.1))
-                        else:
-                            try:
-                                y_true_tmp = y_true.copy()
-                                y_true_tmp[y_true_tmp>0] = 1
-                                batchsummary[f'{phase}_{name}'].append(
-                                    metric(y_true_tmp.astype('uint8'), y_pred))
-                            except:
-                               batchsummary[f'{phase}_{name}'].append(-1) 
+    def save_checkpoint(state, is_best,epoch,filename=f'/logs/{args.exp_name}/checkpoint.pth'):
+        torch.save(state, "."+filename.split(".")[0]+"_"+str(epoch)+".pth")
+        if is_best:
+            shutil.copyfile("."+filename.split(".")[0]+"_"+str(epoch)+".pth", os.path.join("./logs",args.exp_name,'model_best.pth'))
 
-                    # backward + optimize only if in training phase
-                    if phase == 'Train':
-                        loss.backward()
-                        optimizer.step()
-            batchsummary['epoch'] = epoch
-            epoch_loss = loss
-            batchsummary[f'{phase}_loss'] = epoch_loss.item()
-            print('{} Loss: {:.4f}'.format(phase, loss))
-        for field in fieldnames[3:]:
-            batchsummary[field] = np.mean(batchsummary[field])
-        print(batchsummary)
-        with open(os.path.join(bpath, 'log.csv'), 'a', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writerow(batchsummary)
-            # deep copy the model
-            if phase == 'Test' and loss < best_loss:
-                best_loss = loss
-                best_model_wts = copy.deepcopy(model.state_dict())
+    best = 0
+    counter = 0
+    for e in tqdm.trange(1, args.epochs+1):
+        # TRAINING
+        train_epoch_loss = 0
+        train_epoch_acc_mask = 0
+        for X_train_batch, y_train_batch in train_loader:
+            X_train_batch = X_train_batch.cuda()
+            y_train_batch = y_train_batch.cuda()
+            optimizer.zero_grad()
+            y_train_pred_mask = net(X_train_batch)
+            train_loss_mask = criterion(y_train_pred_mask,y_train_batch)
+            train_loss = train_loss_mask
+            train_acc_mask = multi_acc(y_train_pred_mask, y_train_batch)
+            
+            train_loss.backward()
+            optimizer.step()
 
-    time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
-    print('Lowest Loss: {:4f}'.format(best_loss))
 
-    # load best model weights
-    model.load_state_dict(best_model_wts)
-    return model
+            writer.add_scalar("Loss/train", train_loss, counter)
+            writer.add_scalar("Accuracy/train_mask", train_acc_mask.item(), counter)
+            counter += 1
+        if e%5==0:
+            # VALIDATION    
+            with torch.no_grad():
+                
+                val_epoch_loss = 0
+                val_epoch_acc_mask = 0
+
+                net.eval()
+                for X_val_batch, y_val_batch in test_loader:
+                    X_val_batch = X_val_batch.cuda()
+                    y_val_batch = y_val_batch.cuda()
+
+                    y_val_pred_mask = net(X_val_batch)
+                    val_loss_mask = criterion(y_val_pred_mask, y_val_batch)
+
+                    val_loss = val_loss_mask
+                    val_acc_mask = multi_acc(y_val_pred_mask, y_val_batch)
+
+                    val_epoch_loss += val_loss.item()
+                    val_epoch_acc_mask += val_acc_mask.item()
+
+                writer.add_scalar("Loss/test", val_epoch_loss/len(test_loader), e)
+                writer.add_scalar("Accuracy/test_mask", val_epoch_acc_mask/len(test_loader), e)
+
+        if e%10==0:
+            if best<val_epoch_loss/len(test_loader):
+
+                save_checkpoint(net.state_dict(),is_best=True,epoch = e)
+                best=val_epoch_loss/len(test_loader)
+            else:
+                save_checkpoint(net.state_dict(),is_best=False,epoch = e)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Retinaface Training')
+    parser.add_argument('--training_dataset', default='/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification/', help='Training dataset directory')
+    parser.add_argument('--network', default='swin_transformer', help='Backbone network resnet18, resnet50,efficentnet, swin_transformer')
+    parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
+    parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
+    parser.add_argument('--resume_net', default=None, help='resume net for retraining')
+    parser.add_argument('--resume_epoch', default=0, type=int, help='resume iter for retraining')
+    parser.add_argument('--save_folder', default='./logs/', help='Location to save checkpoint models')
+    parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
+    parser.add_argument('--validation_nms', default=0.4, help='Validation non maxima threshold')
+    parser.add_argument('--validation_th', default=0.02, help='Validation confidence threshold')
+    parser.add_argument('--batch_size', default=16, type=int, help='Validation confidence threshold')
+    parser.add_argument('--epochs', default=100, type=int, help='Validation confidence threshold')
+    args = parser.parse_args()
+
+    for network in ["swin_transformer", "efficentnet","resnet50","resnet18"]:
+        args.network = network
+        args.exp_name = args.network + "_iter1"
+        train(args)
