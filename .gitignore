@@ -131,3 +131,4 @@ data
 logs
 data.pkl
 *.pth
+.vscode
