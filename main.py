@@ -13,7 +13,7 @@ from train import train_model
 @click.command()
 @click.option("--data-directory",
               required=False,
-              default="/home/nmp/Desktop/Tez/masterthesis/data/Crack_Segmentation_Dataset-20210406T161122Z-001/Crack_Segmentation_Dataset",
+              default="/media/syn/7CC4B2EE04A2CEAE/private/Crack_Segmentation_Dataset-20210406T130003Z-001/Crack_Segmentation_Dataset",
               help="Specify the data directory.")
 @click.option("--exp_directory",
               required=False,
@@ -25,7 +25,7 @@ from train import train_model
     type=int,
     help="Specify the number of epochs you want to run the experiment for.")
 @click.option("--batch-size",
-              default=2,
+              default=4,
               type=int,
               help="Specify the batch size for the dataloader.")
 def main(data_directory, exp_directory, epochs, batch_size):
