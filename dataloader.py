@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
-import simulation
+from utils import simulation
 
 class CrackConcrete(Dataset):
     def __init__(self, count, transform=None):

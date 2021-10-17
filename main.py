@@ -59,6 +59,8 @@ def train(args):
 
     writer = SummaryWriter(args.save_folder+args.exp_name)
     num_classes = 6
+    batch_size = args.batch_size
+    num_epochs = args.epochs
     num_workers = args.num_workers
     training_dataset = args.training_dataset
     save_folder = args.save_folder+args.exp_name+"/"
@@ -74,7 +76,7 @@ def train(args):
         'train': train_set, 'val': val_set
     }
 
-    batch_size = 25
+    
 
     dataloaders = {
         'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0),
@@ -110,11 +112,11 @@ def train(args):
         net.load_state_dict(new_state_dict)
     net = net.cuda()
     net.train()
-    num_epochs = 25
+    
     best_model_wts = copy.deepcopy(net.state_dict())
     best_loss = 1e10
 
-    for epoch in range(num_epochs):
+    for epoch in tqdm.trange(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
         
@@ -184,9 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--resume_epoch', default=0, type=int, help='resume iter for retraining')
     parser.add_argument('--save_folder', default='./logs/', help='Location to save checkpoint models')
     parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
-    parser.add_argument('--validation_nms', default=0.4, help='Validation non maxima threshold')
-    parser.add_argument('--validation_th', default=0.02, help='Validation confidence threshold')
-    parser.add_argument('--batch_size', default=8, type=int, help='Validation confidence threshold')
+    parser.add_argument('--batch_size', default=1, type=int, help='Validation confidence threshold')
     parser.add_argument('--epochs', default=100, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
     
