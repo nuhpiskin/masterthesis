@@ -1,7 +1,7 @@
 from models.resnet18_unet import *
 from collections import defaultdict
 import torch.nn.functional as F
-from dataloader import CrackConcrete
+from utils.dataloader import CrackConcrete, CrackConcreteData
 import os
 import torch
 import torch.optim as optim
@@ -18,7 +18,7 @@ from tqdm import trange
 from torchvision.ops import nms
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from loss import *
+from utils.loss import *
 from torch.optim import lr_scheduler
 import copy
 from torch.utils.data import Dataset, DataLoader
@@ -69,6 +69,10 @@ def train(args):
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
     ])
+    train_set = CrackConcreteData(datapath = "/media/nmp/C/Tez/dataset/Segmentation/Train" ,transform=trans)
+    val_set = CrackConcreteData(datapath = "/media/nmp/C/Tez/dataset/Segmentation/Val",transform=trans)
+
+    d = train_set[0]
     train_set = CrackConcrete(2000, transform=trans)
     val_set = CrackConcrete(200, transform=trans)
 
