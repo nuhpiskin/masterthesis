@@ -26,8 +26,8 @@ def train(args):
     training_dataset = args.training_dataset
     save_folder = args.save_folder+args.exp_name+"/"
 
-    train_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification")
-    test_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification_Val")
+    train_dataset = CrackConcrete("/media/nmp/C/Tez/dataset/Classification/Train/Train")
+    test_dataset = CrackConcrete("/media/nmp/C/Tez/dataset/Classification/Train/Val")
 
     train_loader = DataLoader(dataset= train_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
     test_loader = DataLoader(dataset= test_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
@@ -135,11 +135,11 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
     parser.add_argument('--validation_nms', default=0.4, help='Validation non maxima threshold')
     parser.add_argument('--validation_th', default=0.02, help='Validation confidence threshold')
-    parser.add_argument('--batch_size', default=16, type=int, help='Validation confidence threshold')
+    parser.add_argument('--batch_size', default=8, type=int, help='Validation confidence threshold')
     parser.add_argument('--epochs', default=100, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
 
-    for network in ["swin_transformer", "efficentnet","resnet50","resnet18"]:
+    for network in ["efficentnet","resnet50","resnet18","swin_transformer"]:
         args.network = network
         args.exp_name = args.network + "_iter1"
         train(args)

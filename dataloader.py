@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 class CrackConcrete(Dataset):
     
     def __init__(self,data_path):
-        self.images_path = glob.glob(data_path+"/**/*.jpg")
+        self.images_path = glob.glob(data_path+"/*.jpg")
         self.img_transform= T.Compose([
             T.Resize((224, 224)),
             T.ToTensor(),
@@ -29,7 +29,7 @@ class CrackConcrete(Dataset):
 
     def __getitem__(self, id):
         img = self.images_path[id]
-        if img.split("/")[-2] == "Negative":
+        if img.split(".")[-1] == "n":
             label = 0
         else:
             label = 1
