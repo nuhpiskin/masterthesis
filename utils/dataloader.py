@@ -54,9 +54,9 @@ class CrackConcreteData(Dataset):
         mask = cv2.imread(os.path.join(self.datapath,"Masks",mask_path))
         size = (192,192)
         image = cv2.resize(cv2.cvtColor(image, cv2.COLOR_BGR2RGB),size)
-        mask = cv2.resize(mask, size)
+        mask = cv2.resize(cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY), size)
         mask[mask!=0] = 1
         if self.transform:
             image = self.transform(image)
         
-        return [image, mask]
+        return [image, mask[None].astype(np.float32)]

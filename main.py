@@ -58,7 +58,7 @@ def train(args):
         os.mkdir(args.save_folder)
 
     writer = SummaryWriter(args.save_folder+args.exp_name)
-    num_classes = 6
+    num_classes = 1
     batch_size = args.batch_size
     num_epochs = args.epochs
     num_workers = args.num_workers
@@ -69,12 +69,12 @@ def train(args):
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
     ])
-    train_set = CrackConcreteData(datapath = "/media/nmp/C/Tez/dataset/Segmentation/Train" ,transform=trans)
-    val_set = CrackConcreteData(datapath = "/media/nmp/C/Tez/dataset/Segmentation/Val",transform=trans)
+    train_set = CrackConcreteData(datapath = "/media/syn/7CC4B2EE04A2CEAE/Thesis/Segmentation/Train" ,transform=trans)
+    val_set = CrackConcreteData(datapath = "/media/syn/7CC4B2EE04A2CEAE/Thesis/Segmentation/Val",transform=trans)
 
-    d = train_set[0]
-    train_set = CrackConcrete(2000, transform=trans)
-    val_set = CrackConcrete(200, transform=trans)
+    # d = train_set[0]
+    # train_set = CrackConcrete(2000, transform=trans)
+    # val_set = CrackConcrete(200, transform=trans)
 
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -83,8 +83,8 @@ def train(args):
     
 
     dataloaders = {
-        'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0),
-        'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=0)
+        'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8),
+        'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=8)
     }
 
     device = "cuda"
@@ -163,15 +163,14 @@ def train(args):
 
             print_metrics(metrics, epoch_samples, phase)
             epoch_loss = metrics['loss'] / epoch_samples
-
-            if epoch%4 == 0:
-                save_checkpoint(net.state_dict(),is_best=False, epoch=epoch)
+            writer.add_scalar("Loss/train", epoch_loss)
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(net.state_dict())
-                save_checkpoint(net.state_dict(),is_best=True, epoch=epoch)
+                if epoch%4 == 0:
+                    save_checkpoint(net.state_dict(),is_best=True, epoch=epoch)
 
         time_elapsed = time.time() - since
         print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -189,8 +188,8 @@ if __name__ == "__main__":
     parser.add_argument('--resume_net', default=None, help='resume net for retraining')
     parser.add_argument('--resume_epoch', default=0, type=int, help='resume iter for retraining')
     parser.add_argument('--save_folder', default='./logs/', help='Location to save checkpoint models')
-    parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
-    parser.add_argument('--batch_size', default=1, type=int, help='Validation confidence threshold')
+    parser.add_argument('--exp_name', default='test1', help='Location to save checkpoint models')
+    parser.add_argument('--batch_size', default=24, type=int, help='Validation confidence threshold')
     parser.add_argument('--epochs', default=100, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
     
