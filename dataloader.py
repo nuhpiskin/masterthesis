@@ -29,7 +29,7 @@ class CrackConcrete(Dataset):
 
     def __getitem__(self, id):
         img = self.images_path[id]
-        if img.split(".")[-1] == "n":
+        if img.split(".")[0][-1] == "n":
             label = 0
         else:
             label = 1

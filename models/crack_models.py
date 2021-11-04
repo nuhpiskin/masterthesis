@@ -20,7 +20,7 @@ class CrackClassificationModels(nn.Module):
         elif model_name == "efficentnet":
             self.backbone = EfficientNet.from_pretrained('efficientnet-b4', num_classes=num_classes)
         elif model_name == "swin_transformer":
-            self.backbone = swin_b(num_classes=num_classes)
+            self.backbone = swin_t(num_classes=num_classes)
     def forward(self,img):
         results = self.backbone(img)
         return results

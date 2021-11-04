@@ -16,7 +16,7 @@ from torchvision.ops import nms
 import tqdm
 from models.crack_models import CrackClassificationModels
 from torch.utils.tensorboard import SummaryWriter
-def train(args):
+def test(args):
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
 
@@ -35,7 +35,7 @@ def train(args):
     net = CrackClassificationModels(model_name = args.network,num_classes = num_classes)
     if args.resume_net is not None:
         print('Loading resume network...')
-        state_dict = torch.load(args.resume_net)
+        state_dict = torch.load("weights/swin/model_best.pth")
         # create new OrderedDict that does not contain `module.`
         from collections import OrderedDict
         new_state_dict = OrderedDict()
@@ -71,57 +71,28 @@ def train(args):
 
     best = 0
     counter = 0
-    for e in tqdm.trange(1, args.epochs+1):
-        # TRAINING
-        train_epoch_loss = 0
-        train_epoch_acc_mask = 0
-        for X_train_batch, y_train_batch in train_loader:
-            X_train_batch = X_train_batch.cuda()
-            y_train_batch = y_train_batch.cuda()
-            optimizer.zero_grad()
-            y_train_pred_mask = net(X_train_batch)
-            train_loss_mask = criterion(y_train_pred_mask,y_train_batch)
-            train_loss = train_loss_mask
-            train_acc_mask = multi_acc(y_train_pred_mask, y_train_batch)
-            
-            train_loss.backward()
-            optimizer.step()
-
-
-            writer.add_scalar("Loss/train", train_loss, counter)
-            writer.add_scalar("Accuracy/train_mask", train_acc_mask.item(), counter)
-            counter += 1
-        if e%5==0:
-            # VALIDATION    
-            with torch.no_grad():
+    with torch.no_grad():
                 
-                val_epoch_loss = 0
-                val_epoch_acc_mask = 0
+        val_epoch_loss = 0
+        val_epoch_acc_mask = 0
 
-                net.eval()
-                for X_val_batch, y_val_batch in test_loader:
-                    X_val_batch = X_val_batch.cuda()
-                    y_val_batch = y_val_batch.cuda()
+    net.eval()
+    for X_val_batch, y_val_batch in test_loader:
+        X_val_batch = X_val_batch.cuda()
+        y_val_batch = y_val_batch.cuda()
 
-                    y_val_pred_mask = net(X_val_batch)
-                    val_loss_mask = criterion(y_val_pred_mask, y_val_batch)
+        y_val_pred_mask = net(X_val_batch)
+        val_loss_mask = criterion(y_val_pred_mask, y_val_batch)
 
-                    val_loss = val_loss_mask
-                    val_acc_mask = multi_acc(y_val_pred_mask, y_val_batch)
+        val_loss = val_loss_mask
+        val_acc_mask = multi_acc(y_val_pred_mask, y_val_batch)
 
-                    val_epoch_loss += val_loss.item()
-                    val_epoch_acc_mask += val_acc_mask.item()
+        val_epoch_loss += val_loss.item()
+        val_epoch_acc_mask += val_acc_mask.item()
+    print("Validation Loss",val_epoch_loss/len(test_loader))
+    print("Accuracy",val_epoch_acc_mask/len(test_loader))
+ 
 
-                writer.add_scalar("Loss/test", val_epoch_loss/len(test_loader), e)
-                writer.add_scalar("Accuracy/test_mask", val_epoch_acc_mask/len(test_loader), e)
-
-        if e%10==0:
-            if best<val_epoch_loss/len(test_loader):
-
-                save_checkpoint(net.state_dict(),is_best=True,epoch = e)
-                best=val_epoch_loss/len(test_loader)
-            else:
-                save_checkpoint(net.state_dict(),is_best=False,epoch = e)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Retinaface Training')
@@ -129,17 +100,16 @@ if __name__ == "__main__":
     parser.add_argument('--network', default='swin_transformer', help='Backbone network resnet18, resnet50,efficentnet, swin_transformer')
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
-    parser.add_argument('--resume_net', default=None, help='resume net for retraining')
+    parser.add_argument('--resume_net', default="true", help='resume net for retraining')
     parser.add_argument('--resume_epoch', default=0, type=int, help='resume iter for retraining')
     parser.add_argument('--save_folder', default='./logs/', help='Location to save checkpoint models')
     parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
     parser.add_argument('--validation_nms', default=0.4, help='Validation non maxima threshold')
     parser.add_argument('--validation_th', default=0.02, help='Validation confidence threshold')
-    parser.add_argument('--batch_size', default=4, type=int, help='Validation confidence threshold')
-    parser.add_argument('--epochs', default=20, type=int, help='Validation confidence threshold')
+    parser.add_argument('--batch_size', default=2, type=int, help='Validation confidence threshold')
+    parser.add_argument('--epochs', default=50, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
 
-    for network in ["efficentnet","resnet50","resnet18","swin_transformer"][3:]:
-        args.network = network
-        args.exp_name = args.network + "_iter1"
-        train(args)
+    args.network = ["efficentnet","resnet50","resnet18","swin_transformer"][3]
+    args.exp_name = args.network + "_iter1"
+    test(args)
