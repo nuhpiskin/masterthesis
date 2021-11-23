@@ -26,8 +26,8 @@ def train(args):
     training_dataset = args.training_dataset
     save_folder = args.save_folder+args.exp_name+"/"
 
-    train_dataset = CrackConcrete("/media/nmp/C/Tez/dataset/Classification/Train/Train")
-    test_dataset = CrackConcrete("/media/nmp/C/Tez/dataset/Classification/Train/Val")
+    train_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/Thesis/Classification/ClassificationData/train")
+    test_dataset = CrackConcrete("/media/syn/7CC4B2EE04A2CEAE/Thesis/Classification/ClassificationData/test")
 
     train_loader = DataLoader(dataset= train_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
     test_loader = DataLoader(dataset= test_dataset,batch_size=args.batch_size,shuffle=True,num_workers=8)
@@ -70,7 +70,7 @@ def train(args):
             shutil.copyfile("."+filename.split(".")[0]+"_"+str(epoch)+".pth", os.path.join("./logs",args.exp_name,'model_best.pth'))
 
     best = 0
-    counter = 0
+
     for e in tqdm.trange(1, args.epochs+1):
         # TRAINING
         train_epoch_loss = 0
@@ -87,10 +87,11 @@ def train(args):
             train_loss.backward()
             optimizer.step()
 
+            train_epoch_loss += train_loss.item()
+            train_epoch_acc_mask += train_acc_mask.item()
+        writer.add_scalar("Loss/train", train_epoch_loss/len(train_loader), e)
+        writer.add_scalar("Accuracy/train_mask", train_epoch_acc_mask/len(train_loader), e)
 
-            writer.add_scalar("Loss/train", train_loss, counter)
-            writer.add_scalar("Accuracy/train_mask", train_acc_mask.item(), counter)
-            counter += 1
         if e%5==0:
             # VALIDATION    
             with torch.no_grad():
@@ -115,7 +116,7 @@ def train(args):
                 writer.add_scalar("Loss/test", val_epoch_loss/len(test_loader), e)
                 writer.add_scalar("Accuracy/test_mask", val_epoch_acc_mask/len(test_loader), e)
 
-        if e%10==0:
+        if e%5==0:
             if best<val_epoch_loss/len(test_loader):
 
                 save_checkpoint(net.state_dict(),is_best=True,epoch = e)
@@ -135,11 +136,12 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', default='debug', help='Location to save checkpoint models')
     parser.add_argument('--validation_nms', default=0.4, help='Validation non maxima threshold')
     parser.add_argument('--validation_th', default=0.02, help='Validation confidence threshold')
-    parser.add_argument('--batch_size', default=4, type=int, help='Validation confidence threshold')
+    parser.add_argument('--batch_size', default=24, type=int, help='Validation confidence threshold')
     parser.add_argument('--epochs', default=20, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
-
-    for network in ["efficentnet","resnet50","resnet18","swin_transformer"][3:]:
+    batches = [20,20,32,16]
+    for i,network in enumerate(["efficentnet","resnet50","resnet18","swin_transformer"]):
+        args.batch_size = batches[i]
         args.network = network
         args.exp_name = args.network + "_iter1"
         train(args)
