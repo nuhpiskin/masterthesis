@@ -139,3 +139,4 @@ data.pkl
 weights
 *.zip
 logsold
+*.pkl

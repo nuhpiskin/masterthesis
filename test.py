@@ -18,9 +18,10 @@ from models.crack_models import CrackClassificationModels
 from torch.utils.tensorboard import SummaryWriter
 from timer import Timer
 from sklearn.metrics import precision_score, recall_score, f1_score
+import pickle
+import numpy as np
 
-
-def test(args):
+def test(args,results):
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
 
@@ -68,6 +69,9 @@ def test(args):
 
         correct_pred = (y_pred_tags == y_test).float()
         acc = correct_pred.sum() / len(correct_pred)
+
+        results["predict"].append(y_pred_tags.detach().cpu().numpy()) 
+        results["gt"].append(y_test.detach().cpu().numpy())
 
         acc = acc * 100
 
@@ -169,8 +173,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     networks = ["resnet50", "resnet18", "swin_transformer", "efficentnet"]
+    results = {}
     for i in networks:
         print("MODEL NAME ======> ", i)
+        results[i] = {"predict":[],
+                     "gt":[]}
         args.network = i
         args.exp_name = i + "_iter1"
-        test(args)
+        test(args,results[i])
+        results[i]["predict"] = np.array([int(j) for l in results[i]["predict"] for j in l])
+        results[i]["gt"] = np.array([int(j) for l in results[i]["gt"] for j in l])
+    with open('results_total_val.pkl', 'wb') as handle:
+        pickle.dump(results,handle)
