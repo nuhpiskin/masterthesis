@@ -9,7 +9,7 @@ def plot_img_array(img_array, ncol=3):
     for i in range(len(img_array)):
         plots[i // ncol, i % ncol]
         plots[i // ncol, i % ncol].imshow(img_array[i])
-
+        plots[i // ncol, i % ncol].axis('off')
 from functools import reduce
 def plot_side_by_side(img_arrays):
     flatten_list = reduce(lambda x,y: x+y, zip(*img_arrays))
@@ -27,13 +27,15 @@ def plot_errors(results_dict, title):
         plt.ylabel('dice_coef')
         plt.xlabel('epoch')
         plt.legend(loc=3, bbox_to_anchor=(1, 0))
+        plt.axis('off')
 
     plt.show()
+    
 
 def masks_to_colorimg(masks,colors):
     
 
-    colorimg = np.ones((masks.shape[1], masks.shape[2], 3), dtype=np.float32) * 255
+    colorimg = np.ones((masks.shape[1], masks.shape[2], 3), dtype=np.float32) * 130
     channels, height, width = masks.shape
 
     for y in range(height):
