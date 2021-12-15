@@ -161,7 +161,7 @@ def train(args):
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(net.state_dict())
-                if epoch%4 == 0:
+                if epoch%2 == 0:
                     save_checkpoint(net.state_dict(),is_best=True, epoch=epoch)
 
         time_elapsed = time.time() - since
@@ -175,12 +175,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Retinaface Training')
     parser.add_argument('--training_dataset', default='/media/syn/7CC4B2EE04A2CEAE/private/Crack_classification/', help='Training dataset directory')
     parser.add_argument('--network', default='swin_transformer', help='Backbone network resnet18, resnet50,efficentnet, swin_transformer')
-    parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
+    parser.add_argument('--num_workers', default=0, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
     parser.add_argument('--resume_net', default=None, help='resume net for retraining')
     parser.add_argument('--resume_epoch', default=0, type=int, help='resume iter for retraining')
     parser.add_argument('--save_folder', default='./logs/', help='Location to save checkpoint models')
-    parser.add_argument('--exp_name', default='test1', help='Location to save checkpoint models')
+    parser.add_argument('--exp_name', default='test2', help='Location to save checkpoint models')
     parser.add_argument('--batch_size', default=24, type=int, help='Validation confidence threshold')
     parser.add_argument('--epochs', default=100, type=int, help='Validation confidence threshold')
     args = parser.parse_args()
