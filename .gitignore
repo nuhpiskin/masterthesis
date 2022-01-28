@@ -134,3 +134,6 @@ data.pkl
 .vscode
 *.zip
 *.png
+
+.idea
+*.onnx
