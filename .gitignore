@@ -15,3 +15,9 @@
 local.properties
 opencv-mobile-4.5.3-android
 ncnn-20210720-android-vulkan
+
+*.png
+*.zip
+*.pth
+*.pyc
+logs
