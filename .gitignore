@@ -22,3 +22,6 @@ ncnn-20210720-android-vulkan
 *.pyc
 logs
 *.onnx
+
+ncnn-20210525-android-vulkan
+opencv-mobile-4.5.1-android

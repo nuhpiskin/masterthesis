@@ -36,7 +36,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 {
     public static final int REQUEST_CAMERA = 100;
 
-    private SCRFDNcnn scrfdncnn = new SCRFDNcnn();
+    private CrackFinder crackfinder = new CrackFinder();
     private int facing = 0;
 
     private Spinner spinnerModel;
@@ -67,9 +67,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 
                 int new_facing = 1 - facing;
 
-                scrfdncnn.closeCamera();
+                crackfinder.closeCamera();
 
-                scrfdncnn.openCamera(new_facing);
+                crackfinder.openCamera(new_facing);
 
                 facing = new_facing;
             }
@@ -126,7 +126,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
     {
-        scrfdncnn.setOutputWindow(holder.getSurface());
+        crackfinder.setOutputWindow(holder.getSurface());
     }
 
     @Override
@@ -157,6 +157,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
     {
         super.onPause();
 
-        scrfdncnn.closeCamera();
+        crackfinder.closeCamera();
     }
 }
