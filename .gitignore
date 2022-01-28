@@ -21,3 +21,4 @@ ncnn-20210720-android-vulkan
 *.pth
 *.pyc
 logs
+*.onnx

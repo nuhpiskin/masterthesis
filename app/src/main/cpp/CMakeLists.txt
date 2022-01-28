@@ -4,7 +4,8 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.4.1)
-project(crackdetection)
+project(crackfinder)
+
 set( CMAKE_CXX_FLAGS "-std=c++17 -Wall" )
 set( CMAKE_CXX_FLAGS_DEBUG "-g -std=c++17 -Wall " )
 set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/opencv-mobile-4.5.3-android/sdk/native/jni)
@@ -14,12 +15,13 @@ set(ncnn_DIR ${CMAKE_SOURCE_DIR}/ncnn-20210720-android-vulkan/${ANDROID_ABI}/lib
 find_package(ncnn REQUIRED)
 
 add_library( # Sets the name of the library.
-        crackdetection
+        crackfinder
 
         # Sets the library as a shared library.
         SHARED
 
-
+        crackdetection.cpp
+        crackfinder.cpp
         ndkcamera.cpp
         )
 find_library( # Sets the name of the path variable.
@@ -30,7 +32,7 @@ find_library( # Sets the name of the path variable.
         log)
 find_library(jnigraphics-lib jnigraphics)
 target_link_libraries( # Specifies the target library.
-        crackdetection
+        crackfinder
         ncnn
         # Links the target library to the log library
         # included in the NDK.
