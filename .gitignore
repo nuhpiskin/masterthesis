@@ -1,27 +1,44 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-opencv-mobile-4.5.3-android
-ncnn-20210720-android-vulkan
+# Prerequisites
+*.d
 
-*.png
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+opencv-mobile-4.5.3-ubuntu-1804
+ncnn-20210525-ubuntu-2004
+build
 *.zip
+*.tar
+# Models
 *.pth
-*.pyc
-logs
 *.onnx
+*.param
+*.bin
+.vscode
 
-ncnn-20210525-android-vulkan
-opencv-mobile-4.5.1-android
